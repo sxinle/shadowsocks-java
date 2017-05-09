@@ -15,217 +15,207 @@
  */
 package shadowsocks.util;
 
+import gnu.getopt.Getopt;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-
-import gnu.getopt.Getopt;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 
-import org.json.JSONObject;
-import org.json.JSONException;
-
-public class Config{
+public class Config {
 
     public static Logger log = LogManager.getLogger(Config.class.getName());
 
     private static Config mConfig;
 
-    private String mPassword;
-    private String mMethod;
-    private String mServer;
-    private String mConfigFile;
-    private int mPort;
-    private int mLocalPort;
+    private String  mPassword;
+    private String  mMethod;
+    private String  mServer;
+    private String  mConfigFile;
+    private int     mPort;
+    private int     mLocalPort;
     private boolean mOneTimeAuth;
     private boolean mIsServerMode;
 
-    final private static String DEFAULT_METHOD = "aes-256-cfb";
-    final private static String DEFAULT_PASSWORD = "123456";
-    final private static String DEFAULT_SERVER = "127.0.0.1";
-    final private static int DEFAULT_PORT = 8388;
-    final private static int DEFAULT_LOCAL_PORT = 9999;
+    final private static String DEFAULT_METHOD     = "aes-256-cfb";
+    final private static String DEFAULT_PASSWORD   = "123456";
+    final private static String DEFAULT_SERVER     = "127.0.0.1";
+    final private static int    DEFAULT_PORT       = 8388;
+    final private static int    DEFAULT_LOCAL_PORT = 9999;
 
-    public void setPassowrd(String p)
-    {
+    public void setPassowrd(String p) {
         mPassword = new String(p);
     }
-    public String getPassword()
-    {
+
+    public String getPassword() {
         return mPassword;
     }
 
-    public void setMethod(String m)
-    {
+    public void setMethod(String m) {
         mMethod = new String(m);
     }
-    public String getMethod()
-    {
+
+    public String getMethod() {
         return mMethod;
     }
 
-    public void setServer(String s)
-    {
+    public void setServer(String s) {
         mServer = new String(s);
     }
-    public String getServer()
-    {
+
+    public String getServer() {
         return mServer;
     }
 
-    public void setPort(int p)
-    {
+    public void setPort(int p) {
         mPort = p;
     }
-    public int getPort()
-    {
+
+    public int getPort() {
         return mPort;
     }
 
-    public void setLocalPort(int p)
-    {
+    public void setLocalPort(int p) {
         mLocalPort = p;
     }
-    public int getLocalPort()
-    {
+
+    public int getLocalPort() {
         return mLocalPort;
     }
 
-    public boolean isOTAEnabled()
-    {
+    public boolean isOTAEnabled() {
         return mOneTimeAuth;
     }
-    public void setOTAEnabled(boolean enable){
+
+    public void setOTAEnabled(boolean enable) {
         mOneTimeAuth = enable;
     }
 
-    public boolean isServerMode(){
+    public boolean isServerMode() {
         return mIsServerMode;
     }
-    public void setServerMode(boolean isServer){
+
+    public void setServerMode(boolean isServer) {
         mIsServerMode = isServer;
     }
 
-    public void setConfigFile(String name){
+    public void setConfigFile(String name) {
         mConfigFile = new String(name);
     }
-    public String getConfigFile(){
+
+    public String getConfigFile() {
         return mConfigFile;
     }
 
 
-    public synchronized static Config get()
-    {
-        if (mConfig == null)
-        {
+    public synchronized static Config get() {
+        if (mConfig == null) {
             mConfig = new Config();
         }
         return mConfig;
     }
 
-    public Config()
-    {
+    public Config() {
         mMethod = DEFAULT_METHOD;
         mPassword = DEFAULT_PASSWORD;
         mServer = DEFAULT_SERVER;
         mPort = DEFAULT_PORT;
         mLocalPort = DEFAULT_LOCAL_PORT;
         mOneTimeAuth = false;
-        mIsServerMode = false;
+        mIsServerMode = true;
         mConfigFile = null;
     }
 
-    public void printConfig(){
+    public void printConfig() {
         log.info("Current config is:");
-        log.info("Mode [" + (isServerMode()?"Server":"Local") + "]");
+        log.info("Mode [" + (isServerMode() ? "Server" : "Local") + "]");
         log.info("Crypto method [" + getMethod() + "]");
         log.info("Password [" + getPassword() + "]");
         log.info("Auth [" + isOTAEnabled() + "]");
         if (isServerMode()) {
             log.info("Bind port [" + getPort() + "]");
-        }else{
+        } else {
             log.info("Server [" + getServer() + "]");
             log.info("Server port [" + getPort() + "]");
             log.info("Local port [" + getLocalPort() + "]");
         }
     }
 
-    public static String readConfigFile(String name){
-        try{
+    public static String readConfigFile(String name) {
+        try {
             BufferedReader reader = new BufferedReader(new FileReader(name));
-            char [] data = new char[4096]; /*4096*/
+            char[] data = new char[4096]; /*4096*/
             int size = reader.read(data, 0, data.length);
             if (size < 0)
                 return null;
             return new String(data);
-        }catch(IOException e){
+        } catch (IOException e) {
             log.error("Read config file " + name + " error.", e);
             return null;
         }
     }
 
-    public static void getConfigFromFile(){
+    public static void getConfigFromFile() {
         String name = Config.get().getConfigFile();
         if (name == null)
             return;
         String data = Config.readConfigFile(name);
 
         JSONObject jsonobj = new JSONObject(data);
-        try{
+        try {
             String server = jsonobj.getString("server");
             log.debug("CFG:Server address: " + server);
             Config.get().setServer(server);
-        }catch(JSONException e){
+        } catch (JSONException e) {
             //No this config, ignore;
         }
-        try{
+        try {
             int port = jsonobj.getInt("server_port");
             log.debug("CFG:Port: " + port);
             Config.get().setPort(port);
-        }catch(JSONException e){
+        } catch (JSONException e) {
             //No this config, ignore;
         }
-        try{
+        try {
             int lport = jsonobj.getInt("local_port");
             log.debug("CFG:Local port: " + lport);
             Config.get().setLocalPort(lport);
-        }catch(JSONException e){
+        } catch (JSONException e) {
             //No this config, ignore;
         }
-        try{
+        try {
             String password = jsonobj.getString("password");
             log.debug("CFG:Password: " + password);
             Config.get().setPassowrd(password);
-        }catch(JSONException e){
+        } catch (JSONException e) {
             //No this config, ignore;
         }
-        try{
+        try {
             String method = jsonobj.getString("method");
             log.debug("CFG:Crypto method: " + method);
             Config.get().setMethod(method);
-        }catch(JSONException e){
+        } catch (JSONException e) {
             //No this config, ignore;
         }
-        try{
+        try {
             boolean auth = jsonobj.getBoolean("auth");
             log.debug("CFG:One time auth: " + auth);
             Config.get().setOTAEnabled(auth);
-        }catch(JSONException e){
+        } catch (JSONException e) {
             //No this config, ignore;
         }
     }
-    public static void getConfigFromArgv(String argv[])
-    {
+
+    public static void getConfigFromArgv(String argv[]) {
 
         Getopt g = new Getopt("shadowsocks", argv, "SLm:k:p:as:l:c:");
         int c;
         String arg;
-        while ((c = g.getopt()) != -1)
-        {
-            switch(c)
-            {
+        while ((c = g.getopt()) != -1) {
+            switch (c) {
                 case 'm':
                     arg = g.getOptarg();
                     log.debug("CMD:Crypto method: " + arg);
@@ -278,8 +268,7 @@ public class Config{
         }
     }
 
-    private static void help()
-    {
+    private static void help() {
         //TODO
     }
 }
